@@ -16,3 +16,8 @@ services:
         value: "1"
       - key: GROQ_API_KEY
         sync: false
+      # Set to a postgresql:// URL from Supabase (Settings → Database → Connection string → URI).
+      # Use the **Transaction pooler** URL (port 6543) for best compatibility with Render's free tier.
+      # Leave unset to fall back to ephemeral SQLite (demo only — data wipes on each restart).
+      - key: DATABASE_URL
+        sync: false
