@@ -39,13 +39,33 @@ class ChatConfigError(Exception):
     pass
 
 
-def chat_completion(message: str, history: list[dict] | None = None) -> str:
+def _system_prompt_with_profile(profile: dict | None) -> str:
+    if not profile:
+        return SYSTEM_PROMPT
+    rs = profile.get("riskScore", "unknown")
+    cat = profile.get("riskCategory", "unknown")
+    flags = profile.get("behaviorFlags") or []
+    flag_text = ", ".join(flags) if flags else "none"
+    summary = profile.get("summary", "")
+    extra = (
+        "\n\nUSER PROFILE CONTEXT (use this to tailor every answer)\n"
+        f"Risk score (0-100): {rs}\n"
+        f"Risk category: {cat}\n"
+        f"Behavior flags: {flag_text}\n"
+        + (f"Profile summary: {summary}\n" if summary else "")
+        + "When the user asks about a stock or sector, weigh your answer against their risk score and behavior flags. "
+        "If they're FOMO-driven, gently slow down momentum recommendations. If they're Panic-prone, mention drawdown risk early."
+    )
+    return SYSTEM_PROMPT + extra
+
+
+def chat_completion(message: str, history: list[dict] | None = None, profile: dict | None = None) -> str:
     if not settings.groq_api_key:
         raise ChatConfigError(
             "GROQ_API_KEY is not set. Add it to backend/.env to enable chat."
         )
 
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages = [{"role": "system", "content": _system_prompt_with_profile(profile)}]
     if history:
         for msg in history[-8:]:
             role = msg.get("role")

@@ -9,10 +9,11 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 def chat(payload: dict = Body(...)):
     message = (payload.get("message") or "").strip()
     history = payload.get("history") or []
+    profile = payload.get("profile") if isinstance(payload.get("profile"), dict) else None
     if not message:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="message is required")
     try:
-        reply = chat_completion(message, history)
+        reply = chat_completion(message, history, profile)
     except ChatConfigError as error:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(error))
     except RuntimeError as error:
